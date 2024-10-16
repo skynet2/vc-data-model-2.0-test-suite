@@ -12,6 +12,11 @@ import {
 import http from 'http';
 import receiveJson from './receive-json.js';
 
+import axios from 'axios';
+import qs from 'qs';
+
+let accessToken = "";
+
 export class TestEndpoints {
   constructor({implementation, tag}) {
     this.implementation = implementation;
@@ -22,8 +27,16 @@ export class TestEndpoints {
       issuer => issuer.tags.has(tag)) || null;
     this.vpVerifier = implementation.vpVerifiers?.find(
       vpVerifier => vpVerifier.tags.has(tag)) || null;
+
+    console.log("yyy")
   }
   async issue(credential) {
+    if (this.implementation.settings.oauth2) {
+      let authData = this.implementation.settings.oauth2;
+
+      let token = await issueAccessToken(authData.tokenEndpoint, authData.clientId, authData.clientSecret, authData.scopes);
+    }
+
     const {issuer} = this;
     const issueBody = createRequestBody({issuer, vc: credential});
     return post(issuer, issueBody);
@@ -64,9 +77,54 @@ export class TestEndpoints {
   }
 }
 
+
+/**
+ * Function to issue an access token
+ * @param {string} oidcProviderURL - The OIDC Provider URL
+ * @param {string} clientID - The Client ID
+ * @param {string} secret - The Client Secret
+ * @param {Array} scopes - Array of scopes
+ * @returns {Promise<string>} - A promise that resolves to the ID token
+ */
+export async function issueAccessToken(oidcProviderURL, clientID, secret, scopes) {
+  const tokenURL = `${oidcProviderURL}`;
+
+  // Prepare the form data
+  const formData = qs.stringify({
+    grant_type: 'client_credentials',
+    client_id: clientID,
+    client_secret: secret,
+    scopes: scopes,
+  });
+
+  const authHeader = Buffer.from(`${clientID}:${secret}`).toString('base64');
+
+  // Configure the HTTP client
+  const response = await axios.post(tokenURL, formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${authHeader}`,
+    },
+  });
+
+  // Extract and return the id_token
+  // return response.data.id_token;
+
+  accessToken = response.data.id_token
+
+  return accessToken
+}
+
+class HTTPError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'HTTPError';
+  }
+}
+
 export async function post(endpoint, object) {
   const url = endpoint.settings.endpoint;
-  if(url.startsWith('https:')) {
+  if(url.startsWith('https')) {
     // Use vc-test-suite-implementations for HTTPS requests.
     const {data, error} = await endpoint.post({json: object});
     if(error) {
@@ -75,13 +133,20 @@ export async function post(endpoint, object) {
     return data;
   }
   const postData = Buffer.from(JSON.stringify(object));
+
+  console.log("Sending request to: " + url)
+  console.log("Data: " + postData)
+
   const res = await new Promise((resolve, reject) => {
     const req = http.request(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': postData.length,
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
+        'X-API-Key' : 'rw_token'
       }
     }, resolve);
     req.on('error', reject);
@@ -90,9 +155,9 @@ export async function post(endpoint, object) {
   const result = await receiveJson(res);
   if(res.statusCode >= 400) {
     if(result != null && result.errors) {
-      throw new Error(result.errors);
+      throw new HTTPError(result.errors);
     }
-    throw new Error(result);
+    throw new HTTPError(result);
   }
   if(res.statusCode >= 300) {
     throw new Error('Redirect not supported');

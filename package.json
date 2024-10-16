@@ -41,11 +41,13 @@
     "@digitalbazaar/eddsa-rdfc-2022-cryptosuite": "^1.1.0",
     "@digitalbazaar/mocha-w3c-interop-reporter": "^1.5.0",
     "@digitalbazaar/vc": "^7.0.0",
+    "axios": "^1.7.7",
     "bnid": "^3.0.0",
     "chai": "^4.3.6",
     "jsonld-signatures": "^11.3.0",
     "klona": "^2.0.5",
     "mocha": "^10.0.0",
+    "qs": "^6.13.0",
     "vc-test-suite-implementations": "github:w3c/vc-test-suite-implementations"
   },
   "devDependencies": {
@@ -54,7 +56,8 @@
     "eslint": "^8.19.0",
     "eslint-config-digitalbazaar": "^4.0.1",
     "eslint-plugin-jsdoc": "^39.3.3",
-    "eslint-plugin-unicorn": "^43.0.0"
+    "eslint-plugin-unicorn": "^43.0.0",
+    "nyc": "^17.1.0"
   },
   "mocha": {
     "parallel": false,
