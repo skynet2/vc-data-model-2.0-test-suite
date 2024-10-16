@@ -13,8 +13,8 @@ node_modules/
 package-lock.json
 *.vswp
 .vscode
-localConfig.cjs
 config.json
 reports/**
 !.gitkeep
 allure-results/
+.idea/
