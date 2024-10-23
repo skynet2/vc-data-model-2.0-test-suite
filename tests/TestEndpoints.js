@@ -153,11 +153,16 @@ export async function post(endpoint, object) {
     req.end(postData);
   });
   const result = await receiveJson(res);
+  if (result){
+    console.log("Result")
+    console.log(result)
+  }
+
   if(res.statusCode >= 400) {
     if(result != null && result.errors) {
       throw new HTTPError(result.errors);
     }
-    throw new HTTPError(result);
+      throw new HTTPError(result);
   }
   if(res.statusCode >= 300) {
     throw new Error('Redirect not supported');

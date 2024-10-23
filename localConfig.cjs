@@ -26,7 +26,7 @@ module.exports = {
         }],
         vpVerifiers: [{
             id: 'did:myMethod:implementation:verifier:id',
-            endpoint: `${baseUrl}/presentations/verify`,
+            endpoint: `${baseUrl}/verifier/profiles/v_myprofile_ldp/v1.0/presentations/verify`,
             tags: ["vc2.0"]
         }]
     }]
